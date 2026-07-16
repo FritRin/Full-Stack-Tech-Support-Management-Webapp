@@ -1,8 +1,8 @@
-const { Client } = require('pg');
+import { Client } from 'pg';
 
 const client = new Client({
   user: 'victoria',
-  host: 'localhost',
+  host: 'db',
   database: 'sportsprotechsupportdb',
   password: 'sqlpass',
   port: 5432,
@@ -12,7 +12,7 @@ client.connect();
 
 
 //GET method to view all products
-exports.getProducts = async (req, res) => {
+const getProducts = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM products')
       res.status(200).json(results.rows)
@@ -22,7 +22,7 @@ exports.getProducts = async (req, res) => {
 }
 
 //GET method to view specific product
-exports.getProductByCode = async (req, res) => {
+const getProductByCode = async (req, res) => {
   const productcode = req.params.productcode
     try {
       const results = await client.query('SELECT * FROM products WHERE productcode = $1', [productcode])
@@ -33,7 +33,7 @@ exports.getProductByCode = async (req, res) => {
 }
 
 //POST method to add a new product
-exports.createProduct = async (req, res) => {
+const createProduct = async (req, res) => {
   const { productcode, name, version, releasedate } = req.body
     try {
       const results = await client.query('INSERT INTO products (productcode, name, version, releasedate) VALUES ($1, $2, $3, $4) RETURNING *', [productcode, name, version, releasedate])
@@ -44,7 +44,7 @@ exports.createProduct = async (req, res) => {
 }
 
 //PUT method to update an existing product
-exports.updateProduct = async (req, res) => {
+const updateProduct = async (req, res) => {
   const productcode = req.params.productcode
   const { name, version } = req.body
     try {
@@ -56,7 +56,7 @@ exports.updateProduct = async (req, res) => {
 }
 
 //DELETE method to delete an existing product
-exports.deleteProduct = async (req, res) => {
+const deleteProduct = async (req, res) => {
   const productcode = req.params.productcode
     try {
       await client.query('DELETE FROM products WHERE productcode = $1 RETURNING *', [productcode])
@@ -67,7 +67,7 @@ exports.deleteProduct = async (req, res) => {
 }
 
 //GET all technicians
-exports.getTechnicians = async (req, res) => {
+const getTechnicians = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM technicians')
       res.status(200).json(results.rows)
@@ -77,7 +77,7 @@ exports.getTechnicians = async (req, res) => {
 }
 
 //GET a specific technician
-exports.getTechnicianById = async (req, res) => {
+const getTechnicianById = async (req, res) => {
   const techid = req.params.techid
 
     try {
@@ -89,7 +89,7 @@ exports.getTechnicianById = async (req, res) => {
 }
 
 //POST create a new technician
-exports.createTechnician = async (req, res) => {
+const createTechnician = async (req, res) => {
   const { firstname, lastname, email, phone, password } = req.body
     try {
       const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING *', 
@@ -101,7 +101,7 @@ exports.createTechnician = async (req, res) => {
 }
 
 //PUT update a technician
-exports.updateTechnician = async (req, res) => {
+const updateTechnician = async (req, res) => {
   const techid = req.params.techid
   const { firstname, lastname, email, phone, password } = req.body
     try {
@@ -114,7 +114,7 @@ exports.updateTechnician = async (req, res) => {
 }
 
 //DELETE a technician
-exports.deleteTechnician = async (req, res) => {
+const deleteTechnician = async (req, res) => {
   const techid = req.params.techid
     try {
       await client.query('DELETE FROM technicians WHERE techid = $1 RETURNING *', [techid])
@@ -125,7 +125,7 @@ exports.deleteTechnician = async (req, res) => {
 }
 
 //GET all Customers
-exports.getCustomers = async (req, res) => {
+const getCustomers = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM customers')
       res.status(200).json(results.rows)
@@ -135,7 +135,7 @@ exports.getCustomers = async (req, res) => {
 }
 
 //search customers by last name
-exports.searchCustomer = async (req, res) => {
+const searchCustomer = async (req, res) => {
   const lastname = req.body
     try {
       const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [lastname])
@@ -146,7 +146,7 @@ exports.searchCustomer = async (req, res) => {
 }
 
 //GET a specific customer
-exports.getCustomerById = async (req, res) => {
+const getCustomerById = async (req, res) => {
   const customerid = req.params.customerid
     try {
       const results = await client.query('SELECT * FROM customers WHERE customerid = $1', [customerid])
@@ -157,7 +157,7 @@ exports.getCustomerById = async (req, res) => {
 }
 
 //POST create a new Customer
-exports.createCustomer = async (req, res) => {
+const createCustomer = async (req, res) => {
   const { firstname, lastname, address, city, state, postalcode, phone, email, password } = req.body
     try {
       const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', 
@@ -169,7 +169,7 @@ exports.createCustomer = async (req, res) => {
 }
 
 //PUT update a Customer
-exports.updateCustomer = async (req, res) => {
+const updateCustomer = async (req, res) => {
   const customerid = req.params.customerid
   const { firstname, lastname, address, city, state, postalcode, phone, email, password } = req.body
     try {
@@ -182,7 +182,7 @@ exports.updateCustomer = async (req, res) => {
 }
 
 //GET list of products registred to specific customer
-exports.getRegistrations = async (req, res) => {
+const getRegistrations = async (req, res) => {
   const customerid = req.params.customerid
     try {
       const results = await client.query('SELECT * FROM registrations WHERE customerid = $1', [customerid])
@@ -193,7 +193,7 @@ exports.getRegistrations = async (req, res) => {
 }
 
 //Register product for a customer
-exports.registerCustomer = async (req, res) => {
+const registerCustomer = async (req, res) => {
   const customerid = req.params.customerid
   const { productcode, registrationdate } = req.body
     try {
@@ -204,6 +204,25 @@ exports.registerCustomer = async (req, res) => {
     }
 }
 
+export {
+  getProducts,
+  getProductByCode,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getTechnicians,
+  getTechnicianById,
+  createTechnician,
+  updateTechnician,
+  deleteTechnician,
+  getCustomers,
+  getCustomerById,
+  searchCustomer,
+  createCustomer,
+  updateCustomer,
+  getRegistrations,
+  registerCustomer,
+}
 //Testing the functions
 //createProduct('SAM10', 'Sample Product 1.0', 1.0, '2025-07-09');
 //getProduct('SAM10');

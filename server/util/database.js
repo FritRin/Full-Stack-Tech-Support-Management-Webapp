@@ -1,8 +1,7 @@
-
-const Sequelize = require('sequelize');
+import { Sequelize } from "sequelize";
 const sequelize = new Sequelize('sportsprotechsupportdb', 'victoria', 'sqlpass', {
-  host: 'localhost',
+  host: 'db',
   dialect: 'postgres',
 });
 
-module.exports = sequelize;
+export default sequelize;

@@ -1,6 +1,8 @@
-const express = require('express');
-const queryController = require('./queries.js');
-const router = express.Router();
+import express from 'express';
+import { Router } from 'express';
+import * as queryController  from '../controllers/queries.js';
+
+const router = Router();
 
 router.get('/products', queryController.getProducts);
 router.get('/products/:productcode', queryController.getProductByCode);
@@ -23,4 +25,4 @@ router.delete('/technicians/:techid', queryController.deleteTechnician);
 router.get('/registrations/:customerid', queryController.getRegistrations);
 router.post('/registrations', queryController.registerCustomer);
 
-module.exports = router;
+export default router;
