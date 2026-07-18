@@ -15,7 +15,13 @@ client.connect();
 const getProducts = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM products')
-      res.status(200).json(results.rows)
+        const products = results.rows.map(row => ({
+        productCode: row.productcode,
+        name: row.name,
+        version: row.version,
+        releaseDate: row.releasedate.toISOString().split('T')[0],
+      }));
+      res.status(200).json(products)
     } catch (err) {
       throw err
     }
@@ -23,10 +29,16 @@ const getProducts = async (req, res) => {
 
 //GET method to view specific product
 const getProductByCode = async (req, res) => {
-  const productcode = req.params.productcode
+  const productCode = req.params.productcode
     try {
-      const results = await client.query('SELECT * FROM products WHERE productcode = $1', [productcode])
-      res.status(200).json(results.rows)
+      const results = await client.query('SELECT * FROM products WHERE productcode = $1', [productCode])
+      const row = results.rows[0];
+      res.status(200).json({
+        productCode: row.productcode,
+        name: row.name,
+        version: row.version,
+        releaseDate: row.releasedate.toISOString().split('T')[0],
+    });
     } catch (err) {
       throw err
     }
@@ -34,10 +46,16 @@ const getProductByCode = async (req, res) => {
 
 //POST method to add a new product
 const createProduct = async (req, res) => {
-  const { productcode, name, version, releasedate } = req.body
+  const { productCode, name, version, releaseDate } = req.body
     try {
-      const results = await client.query('INSERT INTO products (productcode, name, version, releasedate) VALUES ($1, $2, $3, $4) RETURNING *', [productcode, name, version, releasedate])
-      res.status(201).send('Product successfully created: ${results.rows[0]}')
+      const results = await client.query('INSERT INTO products (productcode, name, version, releasedate) VALUES ($1, $2, $3, $4) RETURNING *', [productCode, name, version, releaseDate])
+      const row = results.rows[0];
+      res.status(201).json({
+        productCode: row.productcode,
+        name: row.name,
+        version: row.version,
+        releaseDate: row.releasedate,
+    });
     } catch (err) {
       throw err  
     }
@@ -45,11 +63,17 @@ const createProduct = async (req, res) => {
 
 //PUT method to update an existing product
 const updateProduct = async (req, res) => {
-  const productcode = req.params.productcode
+  const productCode = req.params.productcode
   const { name, version } = req.body
     try {
-      await client.query('UPDATE products SET name = $1, version = $2 WHERE productcode = $3 RETURNING *', [name, version, productcode])
-      res.status(200).send('Product with code ${productcode} was successfully updated.')
+      const results = await client.query('UPDATE products SET name = $1, version = $2 WHERE productcode = $3 RETURNING *', [name, version, productCode])
+      const row = results.rows[0];
+      res.status(200).json({
+        productCode: row.productcode,
+        name: row.name,
+        version: row.version,
+        releaseDate: row.releasedate.toISOString().split('T')[0],
+    });
     } catch (err) {
       throw err
     }
@@ -57,10 +81,16 @@ const updateProduct = async (req, res) => {
 
 //DELETE method to delete an existing product
 const deleteProduct = async (req, res) => {
-  const productcode = req.params.productcode
+  const productCode = req.params.productcode
     try {
-      await client.query('DELETE FROM products WHERE productcode = $1 RETURNING *', [productcode])
-      res.status(200).send('Product with code $1 was successfully deleted.')
+      const results = await client.query('DELETE FROM products WHERE productcode = $1 RETURNING *', [productCode])
+      const row = results.rows[0];
+      res.status(200).json({
+        productCode: row.productcode,
+        name: row.name,
+        version: row.version,
+        releaseDate: row.releasedate.toISOString().split('T')[0],
+    });
     } catch (err) {
       throw err
     }
@@ -70,7 +100,15 @@ const deleteProduct = async (req, res) => {
 const getTechnicians = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM technicians')
-      res.status(200).json(results.rows)
+      const technicians = results.rows.map(row => ({
+        techId: row.techid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        email: row.email,
+        phone: row.phone,
+        password: row.password
+      }));
+      res.status(200).json(technicians)
     } catch (err) {
       throw err
     }
@@ -78,11 +116,19 @@ const getTechnicians = async (req, res) => {
 
 //GET a specific technician
 const getTechnicianById = async (req, res) => {
-  const techid = req.params.techid
+  const techId = req.params.techid
 
     try {
-      const results = await client.query('SELECT * FROM technicians WHERE techid = $1', [techid])
-      res.status(200).json(results.rows)
+      const results = await client.query('SELECT * FROM technicians WHERE techid = $1', [techId])
+      const row = results.rows[0];
+      res.status(200).json({
+        techId: row.techid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        email: row.email,
+        phone: row.phone,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -90,11 +136,19 @@ const getTechnicianById = async (req, res) => {
 
 //POST create a new technician
 const createTechnician = async (req, res) => {
-  const { firstname, lastname, email, phone, password } = req.body
+  const { firstName, lastName, email, phone, password } = req.body
     try {
       const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING *', 
-        [firstname, lastname, email, phone, password])
-      res.status(201).send('New technician was successfully created: ${results.rows[0]}')
+        [firstName, lastName, email, phone, password])
+      const row = results.rows[0];
+      res.status(201).json({
+        techId: row.techid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        email: row.email,
+        phone: row.phone,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -102,12 +156,20 @@ const createTechnician = async (req, res) => {
 
 //PUT update a technician
 const updateTechnician = async (req, res) => {
-  const techid = req.params.techid
-  const { firstname, lastname, email, phone, password } = req.body
+  const techId = req.params.techid
+  const { firstName, lastName, email, phone, password } = req.body
     try {
-      await client.query('UPDATE technicians SET firstname = $1, lastname = $2, email = $3, phone = $4, password = $5 WHERE techid = $6 RETURNING *', 
-        [firstname, lastname, email, phone, password, techid])
-      console.log('Updated technician with ID: ${techid}')
+      const results = await client.query('UPDATE technicians SET firstname = $1, lastname = $2, email = $3, phone = $4, password = $5 WHERE techid = $6 RETURNING *', 
+        [firstName, lastName, email, phone, password, techId])
+      const row = results.rows[0];
+      res.status(200).json({
+        techId: row.techid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        email: row.email,
+        phone: row.phone,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -115,10 +177,18 @@ const updateTechnician = async (req, res) => {
 
 //DELETE a technician
 const deleteTechnician = async (req, res) => {
-  const techid = req.params.techid
+  const techId = req.params.techid
     try {
-      await client.query('DELETE FROM technicians WHERE techid = $1 RETURNING *', [techid])
-      res.status(200).send('Technician with ID ${techid} was deleted.')
+      const results = await client.query('DELETE FROM technicians WHERE techid = $1 RETURNING *', [techId])
+      const row = results.rows[0];
+      res.status(200).json({
+        techId: row.techid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        email: row.email,
+        phone: row.phone,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -128,7 +198,18 @@ const deleteTechnician = async (req, res) => {
 const getCustomers = async (req, res) => {
     try {
       const results = await client.query('SELECT * FROM customers')
-      res.status(200).json(results.rows)
+      const customers = results.rows.map(row => ({
+        customerId: row.customerid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        postalCode: row.postalcode,
+        phone: row.phone,
+        email: row.email,
+        password: row.password
+      }));
+      res.status(200).json(customers)
     } catch (err) {
       throw err
     }
@@ -136,10 +217,21 @@ const getCustomers = async (req, res) => {
 
 //search customers by last name
 const searchCustomer = async (req, res) => {
-  const lastname = req.body
+  const lastName = req.body
     try {
-      const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [lastname])
-      res.status(200).json(results.rows)
+      const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [lastName])
+      const customers = results.rows.map(row => ({
+        customerId: row.customerid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        postalCode: row.postalcode,
+        phone: row.phone,
+        email: row.email,
+        password: row.password
+      }));
+      res.status(200).json(customers)
     } catch (err) {
       throw err
     }
@@ -147,10 +239,21 @@ const searchCustomer = async (req, res) => {
 
 //GET a specific customer
 const getCustomerById = async (req, res) => {
-  const customerid = req.params.customerid
+  const customerId = req.params.customerid
     try {
-      const results = await client.query('SELECT * FROM customers WHERE customerid = $1', [customerid])
-      res.status(200).json(results.rows)
+      const results = await client.query('SELECT * FROM customers WHERE customerid = $1', [customerId])
+      const row = results.rows[0];
+      res.status(200).json({
+        customerId: row.customerid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        postalCode: row.postalcode,
+        phone: row.phone,
+        email: row.email,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -158,11 +261,22 @@ const getCustomerById = async (req, res) => {
 
 //POST create a new Customer
 const createCustomer = async (req, res) => {
-  const { firstname, lastname, address, city, state, postalcode, phone, email, password } = req.body
+  const { firstName, lastName, address, city, state, postalCode, phone, email, password } = req.body
     try {
       const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', 
-        [firstname, lastname, address, city, state, postalcode, phone, email, password])
-      res.status(201).send('New customer was created: ${results.rows[0]}')
+        [firstName, lastName, address, city, state, postalCode, phone, email, password])
+      const row = results.rows[0];
+      res.status(201).json({
+        customerId: row.customerid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        postalCode: row.postalcode,
+        phone: row.phone,
+        email: row.email,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -170,12 +284,23 @@ const createCustomer = async (req, res) => {
 
 //PUT update a Customer
 const updateCustomer = async (req, res) => {
-  const customerid = req.params.customerid
-  const { firstname, lastname, address, city, state, postalcode, phone, email, password } = req.body
+  const customerId = req.params.customerid
+  const { firstName, lastName, address, city, state, postalCode, phone, email, password } = req.body
     try {
-      await client.query('UPDATE customers SET firstname = $1, lastname = $2, address = $3, city = $4, state = $5, postalcode = $6, phone = $7, email = $8, password = $9 WHERE customerid = $10 RETURNING *', 
-        [customerid, firstname, lastname, address, city, state, postalcode, phone, email, password])
-      res.status(200).send('Customer with ID ${customerid} was successfully updated.')
+      const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, address = $3, city = $4, state = $5, postalcode = $6, phone = $7, email = $8, password = $9 WHERE customerid = $10 RETURNING *', 
+        [customerId, firstName, lastName, address, city, state, postalCode, phone, email, password])
+      const row = results.rows[0];
+      res.status(200).json({
+        customerId: row.customerid,
+        firstName: row.firstname,
+        lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        postalCode: row.postalcode,
+        phone: row.phone,
+        email: row.email,
+        password: row.password
+    })
     } catch (err) {
       throw err
     }
@@ -183,10 +308,15 @@ const updateCustomer = async (req, res) => {
 
 //GET list of products registred to specific customer
 const getRegistrations = async (req, res) => {
-  const customerid = req.params.customerid
+  const customerId = req.params.customerid
     try {
-      const results = await client.query('SELECT * FROM registrations WHERE customerid = $1', [customerid])
-      res.status(200).json(results.rows)
+      const results = await client.query('SELECT * FROM registrations WHERE customerid = $1', [customerId])
+      const products = results.rows.map(row => ({
+        customerId: row.customerid,
+        productCode: row.productcode,
+        registrationDate: row.registrationdate.toISOString().split('T')[0],
+      }));
+      res.status(200).json(products)
     } catch (err) {
       throw err
     }
@@ -194,11 +324,16 @@ const getRegistrations = async (req, res) => {
 
 //Register product for a customer
 const registerCustomer = async (req, res) => {
-  const customerid = req.params.customerid
-  const { productcode, registrationdate } = req.body
+  const customerId = req.params.customerid
+  const { productCode, registrationDate } = req.body
     try {
-        const results = await client.query('INSERT INTO registrations (customerid, productcode, registrationdate) VALUES ($1, $2, $3)', [customerid, productcode, registrationdate]);
-        res.status(201).send('Successfully registered product to customer: ${res.rows[0]}')
+        const results = await client.query('INSERT INTO registrations (customerid, productCode, registrationdate) VALUES ($1, $2, $3)', [customerId, productCode, registrationDate]);
+        const row = results.rows[0];
+      res.status(201).json({
+        customerId: row.customerid,
+        productCode: row.productcode,
+        registrationDate: row.registrationdate.toISOString().split('T')[0],
+    });
     } catch (err){
         throw err
     }

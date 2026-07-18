@@ -33,16 +33,6 @@ CREATE TABLE customers (
    email VARCHAR(100) NOT NULL UNIQUE,
    password VARCHAR(100) NOT NULL);
 
-CREATE TABLE incidents ( 
-   incidentID SERIAL PRIMARY KEY,
-   customerID INTEGER NOT NULL REFERENCES customers(customerID),
-   productCode VARCHAR(10) NOT NULL REFERENCES products(productCode),
-   techID INTEGER REFERENCES technicians(techID),
-   dateOpened TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   dateClosed TIMESTAMP,
-   title VARCHAR(50) NOT NULL,
-   description TEXT NOT NULL);
-
 CREATE TABLE registrations (
    customerID INTEGER NOT NULL REFERENCES customers(customerID),
    productCode VARCHAR(10) NOT NULL REFERENCES products(productCode),
