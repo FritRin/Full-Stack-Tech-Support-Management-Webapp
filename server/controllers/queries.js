@@ -1,4 +1,6 @@
 import { Client } from 'pg';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const client = new Client({
   user: 'victoria',
@@ -23,7 +25,9 @@ const getProducts = async (req, res) => {
       }));
       res.status(200).json(products)
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -32,6 +36,13 @@ const getProductByCode = async (req, res) => {
   const productCode = req.params.productcode
     try {
       const results = await client.query('SELECT * FROM products WHERE productcode = $1', [productCode])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Product not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         productCode: row.productcode,
@@ -40,7 +51,9 @@ const getProductByCode = async (req, res) => {
         releaseDate: row.releasedate.toISOString().split('T')[0],
     });
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -57,7 +70,10 @@ const createProduct = async (req, res) => {
         releaseDate: row.releasedate,
     });
     } catch (err) {
-      throw err  
+      console.error();
+      res.status(500).json({
+        error: 'Internal server error.'
+      }) 
     }
 }
 
@@ -67,6 +83,13 @@ const updateProduct = async (req, res) => {
   const { name, version } = req.body
     try {
       const results = await client.query('UPDATE products SET name = $1, version = $2 WHERE productcode = $3 RETURNING *', [name, version, productCode])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Product not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         productCode: row.productcode,
@@ -75,8 +98,10 @@ const updateProduct = async (req, res) => {
         releaseDate: row.releasedate.toISOString().split('T')[0],
     });
     } catch (err) {
-      throw err
-    }
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
 }
 
 //DELETE method to delete an existing product
@@ -84,6 +109,13 @@ const deleteProduct = async (req, res) => {
   const productCode = req.params.productcode
     try {
       const results = await client.query('DELETE FROM products WHERE productcode = $1 RETURNING *', [productCode])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Product not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         productCode: row.productcode,
@@ -92,9 +124,12 @@ const deleteProduct = async (req, res) => {
         releaseDate: row.releasedate.toISOString().split('T')[0],
     });
     } catch (err) {
-      throw err
-    }
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
 }
+
 
 //GET all technicians
 const getTechnicians = async (req, res) => {
@@ -110,7 +145,9 @@ const getTechnicians = async (req, res) => {
       }));
       res.status(200).json(technicians)
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -120,6 +157,13 @@ const getTechnicianById = async (req, res) => {
 
     try {
       const results = await client.query('SELECT * FROM technicians WHERE techid = $1', [techId])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Technician not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         techId: row.techid,
@@ -130,7 +174,9 @@ const getTechnicianById = async (req, res) => {
         password: row.password
     })
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -150,7 +196,10 @@ const createTechnician = async (req, res) => {
         password: row.password
     })
     } catch (err) {
-      throw err
+      console.error();
+      res.status(500).json({
+        error: 'Internal server error.'
+      })
     }
 }
 
@@ -161,6 +210,13 @@ const updateTechnician = async (req, res) => {
     try {
       const results = await client.query('UPDATE technicians SET firstname = $1, lastname = $2, email = $3, phone = $4, password = $5 WHERE techid = $6 RETURNING *', 
         [firstName, lastName, email, phone, password, techId])
+
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Technician not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         techId: row.techid,
@@ -171,7 +227,9 @@ const updateTechnician = async (req, res) => {
         password: row.password
     })
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -180,6 +238,13 @@ const deleteTechnician = async (req, res) => {
   const techId = req.params.techid
     try {
       const results = await client.query('DELETE FROM technicians WHERE techid = $1 RETURNING *', [techId])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Technician not found.'
+        })
+      }
+      
       const row = results.rows[0];
       res.status(200).json({
         techId: row.techid,
@@ -190,7 +255,9 @@ const deleteTechnician = async (req, res) => {
         password: row.password
     })
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -202,16 +269,15 @@ const getCustomers = async (req, res) => {
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
-        address: row.address,
-        city: row.city,
-        postalCode: row.postalcode,
         phone: row.phone,
         email: row.email,
         password: row.password
       }));
       res.status(200).json(customers)
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -220,20 +286,20 @@ const searchCustomer = async (req, res) => {
   const lastName = req.body
     try {
       const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [lastName])
+      
       const customers = results.rows.map(row => ({
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
-        address: row.address,
-        city: row.city,
-        postalCode: row.postalcode,
         phone: row.phone,
         email: row.email,
         password: row.password
       }));
       res.status(200).json(customers)
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -242,68 +308,125 @@ const getCustomerById = async (req, res) => {
   const customerId = req.params.customerid
     try {
       const results = await client.query('SELECT * FROM customers WHERE customerid = $1', [customerId])
+      
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Customer not found.'
+        })
+      }
+
       const row = results.rows[0];
       res.status(200).json({
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
-        address: row.address,
-        city: row.city,
-        postalCode: row.postalcode,
         phone: row.phone,
         email: row.email,
         password: row.password
     })
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
 //POST create a new Customer
 const createCustomer = async (req, res) => {
-  const { firstName, lastName, address, city, state, postalCode, phone, email, password } = req.body
+  const { firstName, lastName, phone, email, password } = req.body
+  const hashedPassword = await bcrypt.hash(password, 10);
     try {
-      const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', 
-        [firstName, lastName, address, city, state, postalCode, phone, email, password])
+      const results = await client.query('INSERT INTO customers (firstname, lastname, phone, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING firstname, lastname, phone, email', 
+        [firstName, lastName, phone, email, hashedPassword])
       const row = results.rows[0];
       res.status(201).json({
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
-        address: row.address,
-        city: row.city,
-        postalCode: row.postalcode,
         phone: row.phone,
         email: row.email,
         password: row.password
     })
     } catch (err) {
-      throw err
+      console.error();
+      res.status(500).json({
+        error: 'Failed to add customer.'
+      })
     }
 }
 
 //PUT update a Customer
 const updateCustomer = async (req, res) => {
   const customerId = req.params.customerid
-  const { firstName, lastName, address, city, state, postalCode, phone, email, password } = req.body
+  const { firstName, lastName, phone, email, password } = req.body
     try {
-      const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, address = $3, city = $4, state = $5, postalcode = $6, phone = $7, email = $8, password = $9 WHERE customerid = $10 RETURNING *', 
-        [customerId, firstName, lastName, address, city, state, postalCode, phone, email, password])
+      const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, phone = $3, email = $4, password = $5 WHERE customerid = $6 RETURNING *', 
+        [customerId, firstName, lastName, phone, email, password])
+
+      if (results.rows.length === 0){
+        return res.status(404).json({
+          error: 'Customer not found.'
+        })
+      }
+
       const row = results.rows[0];
       res.status(200).json({
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
-        address: row.address,
-        city: row.city,
-        postalCode: row.postalcode,
         phone: row.phone,
         email: row.email,
         password: row.password
     })
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
+}
+
+//login
+const loginCustomer = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const results = await client.query(
+      'SELECT * FROM customers where email = $1', [email]
+    );
+
+    if (results.rows.length === 0){
+      return res.status(401).json({
+        error: 'Invalid email or password.'
+      });
+    }
+
+    const customer = results.rows[0];
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      customer.password
+    );
+
+    if (!passwordMatch){
+      return res.status(401).json({
+        error: 'Invalid email or password.'
+      })
+    }
+
+    const token = jwt.sign(
+      {
+        customerId: customer.customerId
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '1h'
+      }
+    );
+  } catch (err){
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
 }
 
 //GET list of products registred to specific customer
@@ -318,7 +441,9 @@ const getRegistrations = async (req, res) => {
       }));
       res.status(200).json(products)
     } catch (err) {
-      throw err
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -335,7 +460,10 @@ const registerCustomer = async (req, res) => {
         registrationDate: row.registrationdate.toISOString().split('T')[0],
     });
     } catch (err){
-        throw err
+      console.error();
+      res.status(500).json({
+        error: 'Internal server error.'
+    })
     }
 }
 
@@ -355,6 +483,7 @@ export {
   searchCustomer,
   createCustomer,
   updateCustomer,
+  loginCustomer,
   getRegistrations,
   registerCustomer,
 }

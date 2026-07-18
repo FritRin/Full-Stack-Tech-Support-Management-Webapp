@@ -2,9 +2,7 @@
 
 psql -U victoria -d sportsprotechsupportdb <<-EOSQL
 
-CREATE TABLE countries (
-countryCode CHAR(2) PRIMARY KEY, 
-countryName VARCHAR(50) NOT NULL);
+
 
 CREATE TABLE products (
    productCode VARCHAR(10) PRIMARY KEY,
@@ -13,7 +11,7 @@ CREATE TABLE products (
    releaseDate DATE NOT NULL);
 
 CREATE TABLE technicians(   
-    techID SERIAL PRIMARY KEY,
+   techID SERIAL PRIMARY KEY,
    firstName VARCHAR(50) NOT NULL,
    lastName VARCHAR(50) NOT NULL,
    email VARCHAR(100) NOT NULL UNIQUE,
@@ -21,14 +19,9 @@ CREATE TABLE technicians(
    password VARCHAR(100) NOT NULL);
 
 CREATE TABLE customers (   
-    customerID SERIAL PRIMARY KEY,
+   customerID SERIAL PRIMARY KEY,
    firstName VARCHAR(50) NOT NULL,
    lastName VARCHAR(50) NOT NULL,
-   address VARCHAR(50) NOT NULL,
-   city VARCHAR(50) NOT NULL,
-   state VARCHAR(50) NOT NULL,
-   postalCode VARCHAR(20) NOT NULL,
-   countryCode CHAR(2) NOT NULL REFERENCES countries(countryCode),
    phone VARCHAR(20) NOT NULL,
    email VARCHAR(100) NOT NULL UNIQUE,
    password VARCHAR(100) NOT NULL);

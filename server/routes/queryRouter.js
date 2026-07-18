@@ -1,6 +1,7 @@
 import express from 'express';
 import { Router } from 'express';
 import * as queryController  from '../controllers/queries.js';
+import authenticateToken from '../middleware/authenticateToken.js';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.put('/technicians/:techid', queryController.updateTechnician);
 router.delete('/technicians/:techid', queryController.deleteTechnician);
 
 router.get('/registrations/:customerid', queryController.getRegistrations);
-router.post('/registrations', queryController.registerCustomer);
+router.post('/login', queryController.loginCustomer);
+router.post('/registrations', authenticateToken, queryController.registerCustomer);
 
 export default router;
