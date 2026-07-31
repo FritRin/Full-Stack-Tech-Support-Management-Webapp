@@ -1,13 +1,14 @@
 import { Client } from 'pg';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import 'dotenv/config';
 
 const client = new Client({
-  user: 'victoria',
-  host: 'db',
-  database: 'sportsprotechsupportdb',
-  password: 'sqlpass',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
 client.connect();
@@ -141,7 +142,6 @@ const getTechnicians = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-        password: row.password
       }));
       res.status(200).json(technicians)
     } catch (err) {
@@ -171,7 +171,6 @@ const getTechnicianById = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-        password: row.password
     })
     } catch (err) {
       res.status(500).json({
@@ -193,7 +192,6 @@ const createTechnician = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-        password: row.password
     })
     } catch (err) {
       console.error();
@@ -224,7 +222,6 @@ const updateTechnician = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-        password: row.password
     })
     } catch (err) {
       res.status(500).json({
@@ -252,9 +249,10 @@ const deleteTechnician = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-        password: row.password
     })
     } catch (err) {
+      
+      
       res.status(500).json({
         error: 'Internal server error.'
     })
@@ -271,7 +269,6 @@ const getCustomers = async (req, res) => {
         lastName: row.lastname,
         phone: row.phone,
         email: row.email,
-        password: row.password
       }));
       res.status(200).json(customers)
     } catch (err) {
@@ -283,9 +280,9 @@ const getCustomers = async (req, res) => {
 
 //search customers by last name
 const searchCustomer = async (req, res) => {
-  const lastName = req.body
+  const { lastName } = req.query
     try {
-      const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [lastName])
+      const results = await client.query('SELECT * FROM customers WHERE lastname = $1', [`${lastName}`])
       
       const customers = results.rows.map(row => ({
         customerId: row.customerid,
@@ -293,7 +290,6 @@ const searchCustomer = async (req, res) => {
         lastName: row.lastname,
         phone: row.phone,
         email: row.email,
-        password: row.password
       }));
       res.status(200).json(customers)
     } catch (err) {
@@ -322,7 +318,6 @@ const getCustomerById = async (req, res) => {
         lastName: row.lastname,
         phone: row.phone,
         email: row.email,
-        password: row.password
     })
     } catch (err) {
       res.status(500).json({
@@ -345,7 +340,6 @@ const createCustomer = async (req, res) => {
         lastName: row.lastname,
         phone: row.phone,
         email: row.email,
-        password: row.password
     })
     } catch (err) {
       console.error();
@@ -376,7 +370,6 @@ const updateCustomer = async (req, res) => {
         lastName: row.lastname,
         phone: row.phone,
         email: row.email,
-        password: row.password
     })
     } catch (err) {
       res.status(500).json({
@@ -415,14 +408,28 @@ const loginCustomer = async (req, res) => {
 
     const token = jwt.sign(
       {
-        customerId: customer.customerId
+        customerId: customer.customerid
       },
       process.env.JWT_SECRET,
       {
         expiresIn: '1h'
       }
     );
+
+    res.status(200).json({
+      message: 'Login successful!',
+      token,
+      customer: {
+        customerId: customer.customerid,
+        firstName: customer.firstname,
+        lastName: customer.lastname,
+        phone: customer.phone,
+        email: customer.email}
+    })
+
   } catch (err){
+    console.error("LOGIN FAILED:", err);
+    
     res.status(500).json({
         error: 'Internal server error.'
     })
@@ -449,10 +456,10 @@ const getRegistrations = async (req, res) => {
 
 //Register product for a customer
 const registerCustomer = async (req, res) => {
-  const customerId = req.params.customerid
+  const customerId = req.customerId
   const { productCode, registrationDate } = req.body
     try {
-        const results = await client.query('INSERT INTO registrations (customerid, productCode, registrationdate) VALUES ($1, $2, $3)', [customerId, productCode, registrationDate]);
+        const results = await client.query('INSERT INTO registrations (customerid, productCode, registrationdate) VALUES ($1, $2, $3) RETURNING *', [customerId, productCode, registrationDate]);
         const row = results.rows[0];
       res.status(201).json({
         customerId: row.customerid,
@@ -460,8 +467,9 @@ const registerCustomer = async (req, res) => {
         registrationDate: row.registrationdate.toISOString().split('T')[0],
     });
     } catch (err){
-      console.error();
+      console.error(err);
       res.status(500).json({
+        
         error: 'Internal server error.'
     })
     }
