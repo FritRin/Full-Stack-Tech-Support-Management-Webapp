@@ -182,9 +182,10 @@ const getTechnicianById = async (req, res) => {
 //POST create a new technician
 const createTechnician = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body
+  const hashedPassword = await bcrypt.hash(password, 10)
     try {
-      const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING *', 
-        [firstName, lastName, email, phone, password])
+      const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING (firstname, lastname, email, phone)', 
+        [firstName, lastName, email, phone, hashedPassword])
       const row = results.rows[0];
       res.status(201).json({
         techId: row.techid,
@@ -328,11 +329,11 @@ const getCustomerById = async (req, res) => {
 
 //POST create a new Customer
 const createCustomer = async (req, res) => {
-  const { firstName, lastName, phone, email, password } = req.body
+  const { firstName, lastName, address, city, state, postalCode, countryCode, phone, email, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10);
     try {
-      const results = await client.query('INSERT INTO customers (firstname, lastname, phone, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING firstname, lastname, phone, email', 
-        [firstName, lastName, phone, email, hashedPassword])
+      const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING firstname, lastname, phone, email', 
+        [firstName, lastName, address, city, state, postalCode, countryCode, phone, email, hashedPassword])
       const row = results.rows[0];
       res.status(201).json({
         customerId: row.customerid,
@@ -408,7 +409,124 @@ const loginCustomer = async (req, res) => {
 
     const token = jwt.sign(
       {
-        customerId: customer.customerid
+        id: customer.customerid,
+        role: 'customer'
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '1h'
+      }
+    );
+
+    res.status(200).json({
+      message: 'Login successful!',
+      token,
+      customer: {
+        customerId: customer.customerid,
+        firstName: customer.firstname,
+        lastName: customer.lastname,
+        phone: customer.phone,
+        email: customer.email}
+    })
+
+  } catch (err){
+    console.error("LOGIN FAILED:", err);
+    
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
+}
+
+const loginTechnician = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const results = await client.query(
+      'SELECT * FROM technicians where email = $1', [email]
+    );
+
+    if (results.rows.length === 0){
+      return res.status(401).json({
+        error: 'Invalid email or password.'
+      });
+    }
+
+    const technician = results.rows[0];
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      technician.password
+    );
+
+    if (!passwordMatch){
+      return res.status(401).json({
+        error: 'Invalid email or password.'
+      })
+    }
+
+    const token = jwt.sign(
+      {
+        id: technician.techid,
+        role: 'technician'
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '1h'
+      }
+    );
+
+    res.status(200).json({
+      message: 'Login successful!',
+      token,
+      customer: {
+        customerId: customer.customerid,
+        firstName: customer.firstname,
+        lastName: customer.lastname,
+        phone: customer.phone,
+        email: customer.email}
+    })
+
+  } catch (err){
+    console.error("LOGIN FAILED:", err);
+    
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
+}
+
+const loginAdmin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const results = await client.query(
+      'SELECT * FROM administrators where username = $1', [email]
+    );
+
+    if (results.rows.length === 0){
+      return res.status(401).json({
+        error: 'Invalid username or password.'
+      });
+    }
+
+    const admin = results.rows[0];
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      admin.password
+    );
+
+    if (!passwordMatch){
+      return res.status(401).json({
+        error: 'Invalid username or password.'
+      })
+    }
+
+    const token = jwt.sign(
+      {
+        id: admin.username,
+        role: 'admin'
       },
       process.env.JWT_SECRET,
       {
@@ -475,6 +593,26 @@ const registerCustomer = async (req, res) => {
     }
 }
 
+//POST create admin account
+const createAdmin = async (req, res) => {
+  const { username, password } = req.body
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  try {
+    const results = await client.query('INSERT INTO administrators (username, password) VALUES ($1, $2) RETURNING username', [username, hashedPassword]);
+    const row = results.rows[0];
+
+    res.status(201).json({
+      username: row.username,
+    });
+  } catch (err){
+    console.error(err);
+    res.status(500).json({
+      error: 'Internal server error.'
+    })
+  }
+}
+
 export {
   getProducts,
   getProductByCode,
@@ -492,6 +630,8 @@ export {
   createCustomer,
   updateCustomer,
   loginCustomer,
+  loginTechnician,
+  loginAdmin,
   getRegistrations,
   registerCustomer,
 }
