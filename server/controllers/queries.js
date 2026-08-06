@@ -184,8 +184,9 @@ const createTechnician = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10)
     try {
+      createUser(email, password, "technician");
       const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING (firstname, lastname, email, phone)', 
-        [firstName, lastName, email, phone, hashedPassword])
+        [firstName, lastName, email, phone, hashedPassword]);
       const row = results.rows[0];
       res.status(201).json({
         techId: row.techid,
@@ -193,7 +194,9 @@ const createTechnician = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-    })
+    });
+
+    const newUser = await create
     } catch (err) {
       console.error();
       res.status(500).json({
@@ -332,6 +335,7 @@ const createCustomer = async (req, res) => {
   const { firstName, lastName, address, city, state, postalCode, countryCode, phone, email, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10);
     try {
+      createUser(email, password, "customer");
       const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING firstname, lastname, phone, email', 
         [firstName, lastName, address, city, state, postalCode, countryCode, phone, email, hashedPassword])
       const row = results.rows[0];
@@ -356,7 +360,7 @@ const updateCustomer = async (req, res) => {
   const { firstName, lastName, phone, email, password } = req.body
     try {
       const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, phone = $3, email = $4, password = $5 WHERE customerid = $6 RETURNING *', 
-        [customerId, firstName, lastName, phone, email, password])
+        [firstName, lastName, phone, email, password, customerId])
 
       if (results.rows.length === 0){
         return res.status(404).json({
@@ -380,25 +384,25 @@ const updateCustomer = async (req, res) => {
 }
 
 //login
-const loginCustomer = async (req, res) => {
-  const { email, password } = req.body;
+const loginUser = async (req, res) => {
+  const { username, password, role } = req.body;
 
   try {
     const results = await client.query(
-      'SELECT * FROM customers where email = $1', [email]
+      'SELECT * FROM users where username = $1', [username]
     );
 
     if (results.rows.length === 0){
       return res.status(401).json({
-        error: 'Invalid email or password.'
+        error: 'Invalid username or password.'
       });
     }
 
-    const customer = results.rows[0];
+    const user = results.rows[0];
 
     const passwordMatch = await bcrypt.compare(
       password,
-      customer.password
+      user.password
     );
 
     if (!passwordMatch){
@@ -409,8 +413,8 @@ const loginCustomer = async (req, res) => {
 
     const token = jwt.sign(
       {
-        id: customer.customerid,
-        role: 'customer'
+        id: user.id,
+        role: user.role
       },
       process.env.JWT_SECRET,
       {
@@ -421,13 +425,11 @@ const loginCustomer = async (req, res) => {
     res.status(200).json({
       message: 'Login successful!',
       token,
-      customer: {
-        customerId: customer.customerid,
-        firstName: customer.firstname,
-        lastName: customer.lastname,
-        phone: customer.phone,
-        email: customer.email}
-    })
+      user: {
+        userId: user.id,
+        username: user.username,
+        role: user.role}
+    });
 
   } catch (err){
     console.error("LOGIN FAILED:", err);
@@ -438,127 +440,18 @@ const loginCustomer = async (req, res) => {
   }
 }
 
-const loginTechnician = async (req, res) => {
-  const { email, password } = req.body;
 
-  try {
-    const results = await client.query(
-      'SELECT * FROM technicians where email = $1', [email]
-    );
-
-    if (results.rows.length === 0){
-      return res.status(401).json({
-        error: 'Invalid email or password.'
-      });
-    }
-
-    const technician = results.rows[0];
-
-    const passwordMatch = await bcrypt.compare(
-      password,
-      technician.password
-    );
-
-    if (!passwordMatch){
-      return res.status(401).json({
-        error: 'Invalid email or password.'
-      })
-    }
-
-    const token = jwt.sign(
-      {
-        id: technician.techid,
-        role: 'technician'
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: '1h'
-      }
-    );
-
-    res.status(200).json({
-      message: 'Login successful!',
-      token,
-      customer: {
-        customerId: customer.customerid,
-        firstName: customer.firstname,
-        lastName: customer.lastname,
-        phone: customer.phone,
-        email: customer.email}
-    })
-
-  } catch (err){
-    console.error("LOGIN FAILED:", err);
-    
-    res.status(500).json({
-        error: 'Internal server error.'
-    })
-  }
-}
-
-const loginAdmin = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const results = await client.query(
-      'SELECT * FROM administrators where username = $1', [email]
-    );
-
-    if (results.rows.length === 0){
-      return res.status(401).json({
-        error: 'Invalid username or password.'
-      });
-    }
-
-    const admin = results.rows[0];
-
-    const passwordMatch = await bcrypt.compare(
-      password,
-      admin.password
-    );
-
-    if (!passwordMatch){
-      return res.status(401).json({
-        error: 'Invalid username or password.'
-      })
-    }
-
-    const token = jwt.sign(
-      {
-        id: admin.username,
-        role: 'admin'
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: '1h'
-      }
-    );
-
-    res.status(200).json({
-      message: 'Login successful!',
-      token,
-      customer: {
-        customerId: customer.customerid,
-        firstName: customer.firstname,
-        lastName: customer.lastname,
-        phone: customer.phone,
-        email: customer.email}
-    })
-
-  } catch (err){
-    console.error("LOGIN FAILED:", err);
-    
-    res.status(500).json({
-        error: 'Internal server error.'
-    })
-  }
+const createUser = async (username, password, role) => {
+  const hashedPassword = await bcrypt.hash(password, 10);
+    const results = await client.query('INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING username, role', [username, hashedPassword, role]);
+    const row = results.rows[0];                                                                                                     
 }
 
 //GET list of products registred to specific customer
 const getRegistrations = async (req, res) => {
   const customerId = req.params.customerid
     try {
-      const results = await client.query('SELECT * FROM registrations WHERE customerid = $1', [customerId])
+      const results = await client.query('SELECT * FROM registrations WHERE customerid = $1', [customerId]);
       const products = results.rows.map(row => ({
         customerId: row.customerid,
         productCode: row.productcode,
@@ -593,20 +486,128 @@ const registerCustomer = async (req, res) => {
     }
 }
 
-//POST create admin account
-const createAdmin = async (req, res) => {
-  const { username, password } = req.body
-  const hashedPassword = await bcrypt.hash(password, 10)
-
+const getIncidents = async (req, res) => {
   try {
-    const results = await client.query('INSERT INTO administrators (username, password) VALUES ($1, $2) RETURNING username', [username, hashedPassword]);
-    const row = results.rows[0];
+    const results = await client.query('SELECT * FROM incidents');
+    const incidents = results.rows.map(row => ({
+      incidentId: row.incidentid,
+      customerId: row.customerId,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+    }));
+  } catch (err) {
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
+}
 
-    res.status(201).json({
-      username: row.username,
-    });
-  } catch (err){
-    console.error(err);
+const getAssignedIncidents = async (req, res) => {
+  try {
+    const results = await client.query('SELECT * FROM incidents WHERE techid');
+    const incidents = results.rows.map(row => ({
+      incidentId: row.incidentid,
+      customerId: row.customerid,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+    }));
+  } catch (err) {
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
+}
+
+const getOpenIncidents = async (req, res) => {
+  try {
+    const results = await client.query('SELECT * FROM incidents WHERE dateclosed IS NULL');
+    const incidents = results.rows.map(row => ({
+      incidentId: row.incidentid,
+      customerId: row.customerid,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+    }));
+  } catch (err) {
+    res.status(500).json({
+        error: 'Internal server error.'
+    })
+  }
+}
+
+const createIncident = async (req, res) => {
+  const customerId = req.customerId;
+  const { productCode, dateOpened, title, description } = req.body;
+  try {
+      const results = await client.query('INSERT INTO incidents (customerid, productcode, dateopened, title, description) VALUES ($1, $2, $3, $4, $5) RETURNING *', [customerId, productCode, dateOpened, title, description]);
+      const row = results.rows[0];
+      res.status(201).json({
+      incidentId: row.incidentid,
+      customerId: row.customerid,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: 'Internal server error.'
+      })
+    }
+}
+
+const assignIncident = async (req, res) => {
+  const techId = req.techId;
+  try {
+    const results = await client.query('INSERT INTO incidents (techid) VALUES ($1)', [techId]);
+    const row = results.rows[0];
+    res.status(200).json({
+      incidentId: row.incidentid,
+      customerId: row.customerid,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+    })
+  } catch (err) {
+    res.status(500).json({
+      error: 'Internal server error.'
+    })
+  }
+}
+
+const updateIncident = async (req, res) => {
+  const incidentId = req.incidentId;
+  const { description, dateClosed } = req.body;
+  
+  try {const results = await client.query('UPDATE incidents SET description = $1, dateClosed = $2 WHERE incidentid = $3', [description, dateClosed, incidentId]);
+  const row = results.rows[0];
+    res.status(200).json({
+      incidentId: row.incidentid,
+      customerId: row.customerid,
+      productCode: row.productcode,
+      techId: row.techid,
+      dateOpened: row.dateopened,
+      dateClosed: row.dateclosed,
+      title: row.title,
+      description: row.description,
+    })
+  } catch (err) {
     res.status(500).json({
       error: 'Internal server error.'
     })
@@ -629,11 +630,15 @@ export {
   searchCustomer,
   createCustomer,
   updateCustomer,
-  loginCustomer,
-  loginTechnician,
-  loginAdmin,
+  loginUser,
   getRegistrations,
   registerCustomer,
+  getIncidents,
+  getAssignedIncidents,
+  getOpenIncidents,
+  createIncident,
+  assignIncident,
+  updateIncident,
 }
 //Testing the functions
 //createProduct('SAM10', 'Sample Product 1.0', 1.0, '2025-07-09');

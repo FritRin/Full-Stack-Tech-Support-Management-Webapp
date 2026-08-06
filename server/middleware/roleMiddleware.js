@@ -6,7 +6,7 @@ const checkRole = (...allowedRoles) => {
         }
 
         if (!allowedRoles.includes(req.user.role)){
-            res.status(403).json({message: "Acess Denied"});
+            return res.status(403).json({message: "Access Denied"});
         }
 
         next();

@@ -1,10 +1,13 @@
 import jwt from 'jsonwebtoken';
-import { configDotenv } from 'dotenv';
 import 'dotenv/config';
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
-
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({
+            error: 'Authentication required.'
+        });
+    }
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token){
@@ -16,7 +19,9 @@ const authenticateToken = (req, res, next) => {
     try{
         const decoded = jwt.verify (token, process.env.JWT_SECRET);
 
-        req.user = decoded;
+        req.user = {id: decoded.id,
+            role: decoded.role
+        };
 
         next();
     } catch (err){
