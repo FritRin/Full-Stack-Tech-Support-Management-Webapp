@@ -184,7 +184,6 @@ const createTechnician = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10)
     try {
-      createUser(email, password, "technician");
       const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING (firstname, lastname, email, phone)', 
         [firstName, lastName, email, phone, hashedPassword]);
       const row = results.rows[0];
@@ -194,7 +193,8 @@ const createTechnician = async (req, res) => {
         lastName: row.lastname,
         email: row.email,
         phone: row.phone,
-    });
+    })
+    createUser(row.techid, email, password, 'technician');;
 
     const newUser = await create
     } catch (err) {
@@ -335,7 +335,7 @@ const createCustomer = async (req, res) => {
   const { firstName, lastName, address, city, state, postalCode, countryCode, phone, email, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10);
     try {
-      createUser(email, password, "customer");
+      
       const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING firstname, lastname, phone, email', 
         [firstName, lastName, address, city, state, postalCode, countryCode, phone, email, hashedPassword])
       const row = results.rows[0];
@@ -346,6 +346,7 @@ const createCustomer = async (req, res) => {
         phone: row.phone,
         email: row.email,
     })
+    createUser(row.customerid, email, password, 'customer');
     } catch (err) {
       console.error();
       res.status(500).json({
@@ -432,7 +433,7 @@ const loginUser = async (req, res) => {
     });
 
   } catch (err){
-    console.error("LOGIN FAILED:", err);
+    console.error('LOGIN FAILED:', err);
     
     res.status(500).json({
         error: 'Internal server error.'
@@ -441,7 +442,7 @@ const loginUser = async (req, res) => {
 }
 
 
-const createUser = async (username, password, role) => {
+const createUser = async (id, username, password, role) => {
   const hashedPassword = await bcrypt.hash(password, 10);
     const results = await client.query('INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING username, role', [username, hashedPassword, role]);
     const row = results.rows[0];                                                                                                     
@@ -487,58 +488,20 @@ const registerCustomer = async (req, res) => {
 }
 
 const getIncidents = async (req, res) => {
-  try {
-    const results = await client.query('SELECT * FROM incidents');
-    const incidents = results.rows.map(row => ({
-      incidentId: row.incidentid,
-      customerId: row.customerId,
-      productCode: row.productcode,
-      techId: row.techid,
-      dateOpened: row.dateopened,
-      dateClosed: row.dateclosed,
-      title: row.title,
-      description: row.description,
-    }));
-  } catch (err) {
-    res.status(500).json({
-        error: 'Internal server error.'
-    })
-  }
-}
+  const { role, id } = req.user;
 
-const getAssignedIncidents = async (req, res) => {
   try {
-    const results = await client.query('SELECT * FROM incidents WHERE techid');
-    const incidents = results.rows.map(row => ({
-      incidentId: row.incidentid,
-      customerId: row.customerid,
-      productCode: row.productcode,
-      techId: row.techid,
-      dateOpened: row.dateopened,
-      dateClosed: row.dateclosed,
-      title: row.title,
-      description: row.description,
-    }));
-  } catch (err) {
-    res.status(500).json({
-        error: 'Internal server error.'
-    })
-  }
-}
-
-const getOpenIncidents = async (req, res) => {
-  try {
-    const results = await client.query('SELECT * FROM incidents WHERE dateclosed IS NULL');
-    const incidents = results.rows.map(row => ({
-      incidentId: row.incidentid,
-      customerId: row.customerid,
-      productCode: row.productcode,
-      techId: row.techid,
-      dateOpened: row.dateopened,
-      dateClosed: row.dateclosed,
-      title: row.title,
-      description: row.description,
-    }));
+    let results;
+    if (role === 'admin') {
+      results = await client.query('SELECT * FROM incidents');
+    }
+    else if (role === 'technician') {
+      results = await client.query('SELECT * FROM incidents WHERE techid =$1', [id]);
+    }
+    else if (role === 'customer') {
+      results = await client.query('SELECT * FROM incidents WHERE customerid = $1 AND dateclosed IS NULL', [id]);
+    }
+    res.status(200).json(results.rows);
   } catch (err) {
     res.status(500).json({
         error: 'Internal server error.'

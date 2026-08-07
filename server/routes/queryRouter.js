@@ -28,11 +28,9 @@ router.delete('/technicians/:techid', authenticateToken, checkRole('admin'), que
 router.get('/registrations/:customerid', authenticateToken, checkRole('admin', 'customer'), queryController.getRegistrations);
 router.post('/registrations', authenticateToken, checkRole('customer'), queryController.registerCustomer);
 
-router.get('/incidents', authenticateToken, checkRole('admin'), queryController.getIncidents);
-router.get('/incidents/assigned', authenticateToken, checkRole('technician'), queryController.getAssignedIncidents);
-router.get('/incidents/unresolved', authenticateToken, checkRole('customer'), queryController.getOpenIncidents);
+router.get('/incidents', authenticateToken, checkRole('admin', 'technician', 'customer'), queryController.getIncidents);
 router.post('/incidents', authenticateToken, checkRole('admin'), queryController.createIncident);
-router.put('/incidents/:incidentid/assign', authenticateToken, checkRole('admin'), queryController.assignIncident);
-router.put('/incidents/:incidentid/update', authenticateToken, checkRole('technician'), queryController.updateIncident);
+router.put('/incidents/:incidentid', authenticateToken, checkRole('admin'), queryController.assignIncident);
+router.put('/incidents/:incidentid', authenticateToken, checkRole('technician'), queryController.updateIncident);
 
 export default router;
