@@ -12,9 +12,9 @@ router.post('/products', authenticateToken, checkRole('admin'), queryController.
 router.put('/products/:productcode', authenticateToken, checkRole('admin'), queryController.updateProduct);
 router.delete('/products/:productcode', authenticateToken, checkRole('admin'), queryController.deleteProduct);
 
-router.get('/customers', authenticateToken, checkRole('admin', 'technician'), queryController.getCustomers);
-router.get('/customers/search', authenticateToken, checkRole('admin', 'technician'), queryController.searchCustomer);
-router.get('/customers/:customerid', authenticateToken, checkRole('admin', 'technician'), queryController.getCustomerById);
+router.get('/customers', authenticateToken, checkRole('admin'), queryController.getCustomers);
+router.get('/customers/search', authenticateToken, checkRole('admin'), queryController.searchCustomer);
+router.get('/customers/:customerid', authenticateToken, checkRole('admin', 'customer'), queryController.getCustomerById);
 router.post('/customers', authenticateToken, checkRole('admin'), queryController.createCustomer);
 router.put('/customers/:customerid', authenticateToken, checkRole('customer'), queryController.updateCustomer);
 router.post('/login', queryController.loginUser);

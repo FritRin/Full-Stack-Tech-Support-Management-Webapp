@@ -395,8 +395,9 @@ const loginUser = async (req, res) => {
 
     if (results.rows.length === 0){
       return res.status(401).json({
-        error: 'Invalid username or password.'
+        error: 'No corresponding user.'
       });
+      console.log(username, password, role)
     }
 
     const user = results.rows[0];
@@ -408,8 +409,9 @@ const loginUser = async (req, res) => {
 
     if (!passwordMatch){
       return res.status(401).json({
-        error: 'Invalid email or password.'
-      })
+        error: 'Invalid username or password.'
+      });
+      console.log(username, password, role)
     }
 
     const token = jwt.sign(
@@ -597,8 +599,6 @@ export {
   getRegistrations,
   registerCustomer,
   getIncidents,
-  getAssignedIncidents,
-  getOpenIncidents,
   createIncident,
   assignIncident,
   updateIncident,
