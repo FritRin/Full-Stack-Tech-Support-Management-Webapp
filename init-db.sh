@@ -24,6 +24,7 @@ CREATE TABLE customers (
    customerID SERIAL PRIMARY KEY,
    firstName VARCHAR(50) NOT NULL,
    lastName VARCHAR(50) NOT NULL,
+   address VARCHAR(50) NOT NULL,
    city VARCHAR(50) NOT NULL,
    state VARCHAR(50) NOT NULL,
    postalCode VARCHAR(20) NOT NULL,
@@ -71,9 +72,9 @@ INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ('J
 INSERT INTO users (id, username, password, role) VALUES (1, 'johnsmith@sportspro.com', '\$2b\$10\$dj28LG2P9DM3.TeoR7gCb.1HIC3uLdHgcZTG4AUwXb0JAdiQPlvvW', 'technician');
 INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ('Jane', 'Doe', 'janedoe@sportspro.com', '222-222-222', '\$2b\$10\$X1PeoW0FvXjEYlwprAOE6ejkiFH1Yapfhs0lp26O.EWh99Yh2jPje');
 INSERT INTO users (id, username, password, role) VALUES (2, 'janedoe@sportspro.com', '\$2b\$10\$X1PeoW0FvXjEYlwprAOE6ejkiFH1Yapfhs0lp26O.EWh99Yh2jPje', 'technician');
-INSERT INTO customers (firstname, lastname, city, state, postalcode, countrycode, phone, email, password) VALUES ('Johnathan', 'Sims', 'London', 'Greater London', 'E1 6AN', 'UK', '020 1111 1111', 'johnathansims@magnusmail.com', '\$2b\$10\$I.QbDiUuHBLeNEPW6pSWbu.FiW5ZSQL37EOvygltYM39qYn5JnOyG');
+INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ('Johnathan', 'Sims', '1 Dummy Street', 'London', 'Greater London', 'E1 6AN', 'UK', '020 1111 1111', 'johnathansims@magnusmail.com', '\$2b\$10\$I.QbDiUuHBLeNEPW6pSWbu.FiW5ZSQL37EOvygltYM39qYn5JnOyG');
 INSERT INTO users (id, username, password, role) VALUES (1, 'johnathansims@magnusmail.com', '\$2b\$10\$I.QbDiUuHBLeNEPW6pSWbu.FiW5ZSQL37EOvygltYM39qYn5JnOyG', 'customer');
-INSERT INTO customers (firstname, lastname, city, state, postalcode, countrycode, phone, email, password) VALUES ('Martin', 'Blackwood', 'London', 'Greater London', 'E1 6AN', 'UK', '020 2222 2222', 'martinblackwood@magnusmail.com', '\$2b\$10\$uhi.UAhwCGEl/1iphR6eEuqmUtLXKvUizsg0FQS2hvT.F/fJvRChm');
+INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ('Martin', 'Blackwood', '2 Fake Street', 'London', 'Greater London', 'E1 6AN', 'UK', '020 2222 2222', 'martinblackwood@magnusmail.com', '\$2b\$10\$uhi.UAhwCGEl/1iphR6eEuqmUtLXKvUizsg0FQS2hvT.F/fJvRChm');
 INSERT INTO users (id, username, password, role) VALUES (2, 'martinblackwood@magnusmail.com', '\$2b\$10\$uhi.UAhwCGEl/1iphR6eEuqmUtLXKvUizsg0FQS2hvT.F/fJvRChm', 'customer');
 INSERT INTO registrations (customerid, productcode, registrationdate) VALUES (2, 'DRAFT10', '2026-08-03');
 EOSQL

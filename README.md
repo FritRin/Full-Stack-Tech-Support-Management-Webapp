@@ -1,20 +1,19 @@
 # Installation Instructions
 
+- Credentials for initial login: admin, password
+- Technician passwords are pass123
+- Customer passwords are password
+
 ## Prerequisites
 
 - Docker Desktop (ensure this application is running before attempting to install the application)
 - A modern web browser (Google Chrome, Microsoft Edge, Firefox etc)
 
+1. Open a terminal and navigate into the project directory
 
-1. Configure environment variables with .env in the server folder
-- The file should contain database configuration (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
-- The file should also contain JWT_SECRET
+2. Run `docker compose up --build`
 
-2. Open a terminal and navigate into the project directory
-
-3. Run `docker compose up --build`
-
-4. Navigate to `http://localhost` to access the application
+3. Navigate to `http://localhost` to access the application
 
 # API Documentation
 

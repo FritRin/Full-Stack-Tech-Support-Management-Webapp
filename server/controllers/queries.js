@@ -184,9 +184,12 @@ const createTechnician = async (req, res) => {
   const { firstName, lastName, email, phone, password } = req.body
   const hashedPassword = await bcrypt.hash(password, 10)
     try {
-      const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING (firstname, lastname, email, phone)', 
+      const results = await client.query('INSERT INTO technicians (firstname, lastname, email, phone, password) VALUES ($1, $2, $3, $4, $5) RETURNING techid, firstname, lastname, email, phone', 
         [firstName, lastName, email, phone, hashedPassword]);
       const row = results.rows[0];
+
+      await createUser(row.techid, email, hashedPassword, 'technician');
+
       res.status(201).json({
         techId: row.techid,
         firstName: row.firstname,
@@ -194,9 +197,8 @@ const createTechnician = async (req, res) => {
         email: row.email,
         phone: row.phone,
     })
-    createUser(row.techid, email, password, 'technician');;
+    
 
-    const newUser = await create
     } catch (err) {
       console.error();
       res.status(500).json({
@@ -208,10 +210,10 @@ const createTechnician = async (req, res) => {
 //PUT update a technician
 const updateTechnician = async (req, res) => {
   const techId = req.params.techid
-  const { firstName, lastName, email, phone, password } = req.body
+  const { firstName, lastName, email, phone } = req.body
     try {
-      const results = await client.query('UPDATE technicians SET firstname = $1, lastname = $2, email = $3, phone = $4, password = $5 WHERE techid = $6 RETURNING *', 
-        [firstName, lastName, email, phone, password, techId])
+      const results = await client.query('UPDATE technicians SET firstname = $1, lastname = $2, email = $3, phone = $4 WHERE techid = $5 RETURNING *', 
+        [firstName, lastName, email, phone, techId])
 
       if (results.rows.length === 0){
         return res.status(404).json({
@@ -271,6 +273,11 @@ const getCustomers = async (req, res) => {
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        postalCode: row.postalcode,
+        countryCode: row.countryCode,
         phone: row.phone,
         email: row.email,
       }));
@@ -292,6 +299,11 @@ const searchCustomer = async (req, res) => {
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        postalCode: row.postalcode,
+        countryCode: row.countryCode,
         phone: row.phone,
         email: row.email,
       }));
@@ -320,6 +332,11 @@ const getCustomerById = async (req, res) => {
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        postalCode: row.postalcode,
+        countryCode: row.countryCode,
         phone: row.phone,
         email: row.email,
     })
@@ -336,17 +353,22 @@ const createCustomer = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
     try {
       
-      const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING firstname, lastname, phone, email', 
+      const results = await client.query('INSERT INTO customers (firstname, lastname, address, city, state, postalcode, countrycode, phone, email, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING customerid, firstname, lastname, address, city, state, postalcode, countrycode, phone, email', 
         [firstName, lastName, address, city, state, postalCode, countryCode, phone, email, hashedPassword])
       const row = results.rows[0];
       res.status(201).json({
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        postalCode: row.postalcode,
+        countryCode: row.countryCode,
         phone: row.phone,
         email: row.email,
     })
-    createUser(row.customerid, email, password, 'customer');
+    await createUser(row.customerid, email, hashedPassword, 'customer');
     } catch (err) {
       console.error();
       res.status(500).json({
@@ -358,10 +380,10 @@ const createCustomer = async (req, res) => {
 //PUT update a Customer
 const updateCustomer = async (req, res) => {
   const customerId = req.params.customerid
-  const { firstName, lastName, phone, email, password } = req.body
+  const { firstName, lastName, address, city, state, postalCode, countryCode, phone, email, password } = req.body
     try {
-      const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, phone = $3, email = $4, password = $5 WHERE customerid = $6 RETURNING *', 
-        [firstName, lastName, phone, email, password, customerId])
+      const results = await client.query('UPDATE customers SET firstname = $1, lastname = $2, address = $3, city = $4, state = $5, postalCode = $6, countryCode = $7, phone = $8, email = $9 WHERE customerid = $10 RETURNING *', 
+        [firstName, lastName, address, city, state, postalCode, countryCode, phone, email, customerId])
 
       if (results.rows.length === 0){
         return res.status(404).json({
@@ -374,6 +396,11 @@ const updateCustomer = async (req, res) => {
         customerId: row.customerid,
         firstName: row.firstname,
         lastName: row.lastname,
+        address: row.address,
+        city: row.city,
+        state: row.state,
+        postalCode: row.postalcode,
+        countryCode: row.countryCode,
         phone: row.phone,
         email: row.email,
     })
@@ -445,8 +472,7 @@ const loginUser = async (req, res) => {
 
 
 const createUser = async (id, username, password, role) => {
-  const hashedPassword = await bcrypt.hash(password, 10);
-    const results = await client.query('INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING username, role', [username, hashedPassword, role]);
+    const results = await client.query('INSERT INTO users (id, username, password, role) VALUES ($1, $2, $3, $4) RETURNING username, role', [id, username, password, role]);
     const row = results.rows[0];                                                                                                     
 }
 
@@ -470,7 +496,7 @@ const getRegistrations = async (req, res) => {
 
 //Register product for a customer
 const registerCustomer = async (req, res) => {
-  const customerId = req.customerId
+  const customerId = req.user.id
   const { productCode, registrationDate } = req.body
     try {
         const results = await client.query('INSERT INTO registrations (customerid, productCode, registrationdate) VALUES ($1, $2, $3) RETURNING *', [customerId, productCode, registrationDate]);
@@ -512,7 +538,7 @@ const getIncidents = async (req, res) => {
 }
 
 const createIncident = async (req, res) => {
-  const customerId = req.customerId;
+  const customerId = req.user.id;
   const { productCode, dateOpened, title, description } = req.body;
   try {
       const results = await client.query('INSERT INTO incidents (customerid, productcode, dateopened, title, description) VALUES ($1, $2, $3, $4, $5) RETURNING *', [customerId, productCode, dateOpened, title, description]);
@@ -579,6 +605,30 @@ const updateIncident = async (req, res) => {
   }
 }
 
+const getCountries = async (req, res) => {
+  console.log('1. getCountries reached');
+  try {
+    console.log('2. querying database')
+    const results = await client.query('SELECT * FROM countries');
+    console.log('3. db query done')
+    const countries = results.rows.map(row => ({
+      countryCode: row.countrycode,
+      countryName: row.countryname
+    }));
+    console.log('4. countries mapped')
+
+    res.status(200).json(countries);
+    console.log(countries);
+
+    console.log('5. response sent');
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: 'Internal server error.'
+    });
+  } 
+}
+
 export {
   getProducts,
   getProductByCode,
@@ -602,6 +652,7 @@ export {
   createIncident,
   assignIncident,
   updateIncident,
+  getCountries
 }
 //Testing the functions
 //createProduct('SAM10', 'Sample Product 1.0', 1.0, '2025-07-09');

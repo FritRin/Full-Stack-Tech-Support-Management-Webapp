@@ -15,11 +15,25 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
+  app1:
     build:
       context: ./server
     ports:
-      - "3000:3000"
+      - "3000"
+    environment:
+      PG_DB: sportsprotechsupportdb
+      PG_USER: victoria
+      PG_PASSWORD: sqlpass
+      PG_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app2:
+    build:
+      context: ./server
+    ports:
+      - "3000"
     environment:
       PG_DB: sportsprotechsupportdb
       PG_USER: victoria
@@ -37,7 +51,8 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./client/build:/app/build
     depends_on:
-      - app
+      - app1
+      - app2
 
   react-app:
     build:
@@ -45,4 +60,5 @@ services:
     ports:
       - "3001:3000"
     depends_on:
-      - app
+      - app1
+      - app2
